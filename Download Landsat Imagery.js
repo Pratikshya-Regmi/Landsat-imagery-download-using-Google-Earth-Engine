@@ -1,0 +1,56 @@
+function maskL8sr(image) {
+  // Bits 3 and 5 are cloud shadow and cloud, respectively.
+  var cloudShadowBitMask = (1 << 3);
+  var cloudsBitMask = (1 << 5);
+
+  // Get the pixel QA band.
+  var qa = image.select('pixel_qa');
+  
+  // Both flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+  
+}
+
+//load LS8 collection SR image
+var landsatCollection = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+    .filterDate('1995-01-01', '1995-12-31')
+    .filterBounds(geometry1)
+    .map(maskL8sr)
+    
+    
+var lc1988 = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR")
+    .filterDate('2010-01-01', '2010-12-31')
+    .filterBounds(geometry1)
+    .map(maskL8sr)    
+    //var image=landsatCollection.mean()
+    //var image=landsatCollection.median()
+    var image1=lc1988.median()
+    image1 = image1.toUint16()
+    
+    
+
+
+//Define visula parameters
+var vizParams = {
+  bands: ['B4', 'B3', 'B2'],
+  min: 0,
+  max: 0.95,
+  gamma: [0.95, 1.1, 1]
+};
+
+//Add layer to map
+//Map.addLayer(image.clip(geometry), vizParams, 'true color composite');
+
+
+
+
+Export.image.toDrive({
+  image: image1,
+  // description: "snow_mean",
+  // description: "snow_median",
+  description: "landsat1988",
+  scale: 30,
+  region: geometry1
+});
